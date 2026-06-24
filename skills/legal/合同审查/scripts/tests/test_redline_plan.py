@@ -71,6 +71,55 @@ def write_minimal_docx(path: Path, body_xml: str | None = None) -> None:
 
 
 class RedlinePlanTests(unittest.TestCase):
+    def test_party_role_confirmation_is_required_before_redline(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            input_docx = root / "input.docx"
+            output_docx = root / "output.docx"
+            plan_path = root / "redline-plan.json"
+            log_path = root / "redline-log.json"
+            write_minimal_docx(input_docx)
+
+            plan_path.write_text(
+                json.dumps(
+                    {
+                        "meta": {"party_role": "甲方"},
+                        "findings": [
+                            {
+                                "id": "Q001",
+                                "action": "replace",
+                                "target_text": "甲方验收合格后支付尾款。",
+                                "replacement_text": "甲方应在验收合格后5个工作日内支付尾款。",
+                            }
+                        ],
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(APPLY),
+                    "--input",
+                    str(input_docx),
+                    "--plan",
+                    str(plan_path),
+                    "--output",
+                    str(output_docx),
+                    "--log",
+                    str(log_path),
+                ],
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("审查立场未确认", result.stderr)
+            self.assertFalse(output_docx.exists())
+            self.assertFalse(log_path.exists())
+
     def test_apply_redline_plan_writes_revisions_comments_and_log(self) -> None:
         with TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
@@ -143,11 +192,14 @@ class RedlinePlanTests(unittest.TestCase):
                 settings = ET.fromstring(zf.read("word/settings.xml"))
                 comments = ET.fromstring(zf.read("word/comments.xml"))
                 rels = zf.read("word/_rels/document.xml.rels").decode("utf-8")
+                content_types = zf.read("[Content_Types].xml").decode("utf-8")
             self.assertIsNotNone(settings.find("w:trackRevisions", NS))
             self.assertEqual(len(document.findall(".//w:ins", NS)), 1)
             self.assertEqual(len(document.findall(".//w:del", NS)), 1)
             self.assertEqual(len(comments.findall(".//w:comment", NS)), 2)
             self.assertIn("comments.xml", rels)
+            self.assertNotIn("ns0:", rels)
+            self.assertNotIn("ns0:", content_types)
 
             log = json.loads(log_path.read_text(encoding="utf-8"))
             self.assertEqual(log["applied"], 2)

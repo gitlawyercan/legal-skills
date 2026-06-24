@@ -39,6 +39,15 @@ ET.register_namespace("w", W_NS)
 ET.register_namespace("r", R_NS)
 
 
+def write_xml_tree(path: Path, tree: ET.ElementTree, *, default_namespace: str | None = None) -> None:
+    if default_namespace:
+        ET.register_namespace("", default_namespace)
+    else:
+        ET.register_namespace("w", W_NS)
+        ET.register_namespace("r", R_NS)
+    tree.write(path, encoding="utf-8", xml_declaration=True)
+
+
 SUPPORTED_ACTIONS = {
     "auto",
     "comment",
@@ -318,13 +327,9 @@ class RedlineEditor:
     def save(self) -> None:
         self._ensure_track_revisions()
         self._remove_stale_ignorable_namespaces()
-        self.tree.write(self.document_path, encoding="utf-8", xml_declaration=True)
+        write_xml_tree(self.document_path, self.tree)
         if self._comments_tree is not None:
-            self._comments_tree.write(
-                self.unpacked_dir / "word" / "comments.xml",
-                encoding="utf-8",
-                xml_declaration=True,
-            )
+            write_xml_tree(self.unpacked_dir / "word" / "comments.xml", self._comments_tree)
 
     def _remove_stale_ignorable_namespaces(self) -> None:
         for key in list(self.root.attrib):
@@ -372,7 +377,7 @@ class RedlineEditor:
             self.settings_path.parent.mkdir(parents=True, exist_ok=True)
         if root.find(qn("w:trackRevisions")) is None:
             root.append(ET.Element(qn("w:trackRevisions")))
-        tree.write(self.settings_path, encoding="utf-8", xml_declaration=True)
+        write_xml_tree(self.settings_path, tree)
 
     def _ensure_comments(self) -> ET.ElementTree:
         if self._comments_tree is not None:
@@ -398,7 +403,7 @@ class RedlineEditor:
             tree = ET.ElementTree(root)
         for rel in root.findall(f"{{{REL_NS}}}Relationship"):
             if rel.get("Target") == "comments.xml":
-                tree.write(self.rels_path, encoding="utf-8", xml_declaration=True)
+                write_xml_tree(self.rels_path, tree, default_namespace=REL_NS)
                 return
         next_id = 1
         for rel in root.findall(f"{{{REL_NS}}}Relationship"):
@@ -415,7 +420,7 @@ class RedlineEditor:
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments",
         )
         rel.set("Target", "comments.xml")
-        tree.write(self.rels_path, encoding="utf-8", xml_declaration=True)
+        write_xml_tree(self.rels_path, tree, default_namespace=REL_NS)
 
     def _ensure_comment_content_types(self) -> None:
         if not self.content_types_path.exists():
@@ -424,11 +429,7 @@ class RedlineEditor:
         root = tree.getroot()
         for item in root.findall(f"{{{CT_NS}}}Override"):
             if item.get("PartName") == "/word/comments.xml":
-                tree.write(
-                    self.content_types_path,
-                    encoding="utf-8",
-                    xml_declaration=True,
-                )
+                write_xml_tree(self.content_types_path, tree, default_namespace=CT_NS)
                 return
         override = ET.SubElement(root, f"{{{CT_NS}}}Override")
         override.set("PartName", "/word/comments.xml")
@@ -436,7 +437,7 @@ class RedlineEditor:
             "ContentType",
             "application/vnd.openxmlformats-officedocument.wordprocessingml.comments+xml",
         )
-        tree.write(self.content_types_path, encoding="utf-8", xml_declaration=True)
+        write_xml_tree(self.content_types_path, tree, default_namespace=CT_NS)
 
     def paragraph_matches(self, text: str) -> list[Match]:
         matches: list[Match] = []
