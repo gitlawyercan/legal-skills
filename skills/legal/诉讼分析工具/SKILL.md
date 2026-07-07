@@ -2,6 +2,7 @@
 name: 诉讼分析工具
 description: 诉讼分析工具 - 支持文件夹批量处理，判决书深度分析，生成上诉/再审决策支持
 license: CC-BY-NC-SA-4.0
+category: legal
 ---
 
 ## 法律工作总控规则（强制）
