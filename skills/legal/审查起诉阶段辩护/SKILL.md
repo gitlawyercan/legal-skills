@@ -19,6 +19,7 @@ triggers:
 dependencies:
   - 侦查阶段辩护Skill（前序衔接）
   - 一审阶段辩护Skill（后续衔接）
+category: legal
 ---
 
 ## 法律工作总控规则（强制）
