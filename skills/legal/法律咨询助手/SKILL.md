@@ -5,6 +5,7 @@ arguments:
   - name: archive_file
     description: 复盘台账文件路径
     default: 【客户台账文件】
+category: legal
 ---
 
 ## 法律工作总控规则（强制）
