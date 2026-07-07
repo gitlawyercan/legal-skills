@@ -14,6 +14,7 @@ triggers:
 dependencies:
   - 案件承接与委托
   - docx
+category: legal
 ---
 
 ## 法律工作总控规则（强制）
