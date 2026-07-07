@@ -16,6 +16,7 @@ triggers:
   - 一审
   - 二审
   - 上诉
+category: legal
 ---
 
 ## 法律工作总控规则（强制）
