@@ -1,6 +1,8 @@
 <div align="center">
 
-# Legal Skills（Hermes-agent-skill）
+# Legal Skills
+
+备注：因本人使用Hermes，因此fork后自行修改内容
 
 面向中国法律工作的 AI Agent Skills 集合，把法律咨询、诉讼、刑辩、劳动争议、破产、合同、合规、检索与文书交付组织成可复核、可追踪、可本地化改造的工作流。
 
